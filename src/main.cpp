@@ -101,6 +101,24 @@ int main() {
           double steer_value;
           double throttle_value;
 
+          for (int i =0; i < n; i++)
+          {
+              double shift_x = ptsx[i] - px;
+              double shift_y = ptsy[i] - py;
+              
+              // Transalte to car coordinates by shifting the angle, now the x
+              // axis is aligned towards the car direction
+              ptsx[i] = (shift_x * cos(0-psi) - shift_y * sin(0-psi));
+              ptsy[i] = (shift_x * sin(0-psi) + shift_y * cos(0-psi));
+          }
+            
+          double* ptrx = &ptsx[0];
+          Eigen::Map<Eigen::VectorXd> ptsx_xform(ptrx, 6);
+          double* ptry = &ptsy[0];
+          Eigen::Map<Eigen::VectorXd> ptsy_xform(ptry, 6);
+            
+          auto coeffs = polyfit(ptsx_xform, ptsy_xform, 3);
+
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
