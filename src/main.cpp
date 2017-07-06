@@ -100,12 +100,12 @@ int main() {
           */
           double steer_value;
           double throttle_value;
-
-          for (int i =0; i < n; i++)
+          
+          assert(ptsx.size() == ptsy.size());
+          for (unsigned int i =0; i < ptsx.size(); i++)
           {
               double shift_x = ptsx[i] - px;
               double shift_y = ptsy[i] - py;
-              
               // Transalte to car coordinates by shifting the angle, now the x
               // axis is aligned towards the car direction
               ptsx[i] = (shift_x * cos(0-psi) - shift_y * sin(0-psi));
