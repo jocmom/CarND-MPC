@@ -67,13 +67,13 @@ class FG_eval {
     // Minimize change-rate
     for(unsigned int t=0; t<N-1; t++) 
     {
-      fg[0] += CppAD::pow(vars[delta_start + t], 2);
-      fg[0] += CppAD::pow(vars[a_start + t], 2);
+      fg[0] += 100 * CppAD::pow(vars[delta_start + t], 2);
+      fg[0] += 1 * CppAD::pow(vars[a_start + t], 2);
     }
     // Minimize the value gap between sequential actuations
     for(unsigned int t=0; t<N-2; t++)
     {
-      fg[0] += 100 * CppAD::pow(vars[delta_start + t+1] - vars[delta_start+t], 2);
+      fg[0] += 1e6 * CppAD::pow(vars[delta_start + t+1] - vars[delta_start+t], 2);
       fg[0] += CppAD::pow(vars[a_start + t+1] - vars[a_start+t], 2);
     }
     // Initial constraints
@@ -110,14 +110,11 @@ class FG_eval {
       AD<double> f0 = coeffs[0] + coeffs[1] * x0 + coeffs[2] *x0 * x0 + coeffs[3] * x0 * x0 * x0;
       AD<double> psides0 = CppAD::atan(3*coeffs[3]*x0*x0 + 2*coeffs[2]*x0 + coeffs[1]);
 
-      // Here's `x` to get you started.
-      // The idea here is to constraint this value to be 0.
+      // The idea here is to constraint these values to be 0.
       //
       // NOTE: The use of `AD<double>` and use of `CppAD`!
       // This is also CppAD can compute derivatives and pass
       // these to the solver.
-
-      // TODO: Setup the rest of the model constraints
       fg[1 + x_start + t] = x1 - (x0 + v0 * CppAD::cos(psi0) * dt);
       fg[1 + y_start + t] = y1 - (y0 + v0 * CppAD::sin(psi0) * dt);
       fg[1 + psi_start + t] = psi1 - (psi0 + v0 * delta0 / Lf *dt);
@@ -184,8 +181,8 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   // degrees (values in radians).
   // NOTE: Feel free to change this to something else.
   for (unsigned int i = delta_start; i < a_start; i++) {
-    vars_lowerbound[i] = -0.436332*Lf;
-    vars_upperbound[i] = 0.436332*Lf;
+    vars_lowerbound[i] = -0.436332;
+    vars_upperbound[i] = 0.436332;
   }
 
   // Acceleration/decceleration upper and lower limits.
