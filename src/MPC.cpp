@@ -24,6 +24,16 @@ const double Lf = 2.67;
 double ref_v        = 40; 
 double ref_cte      = 0;
 double ref_epsi     = 0;
+
+// cost weights
+double w_cte        = 1;
+double w_epsi       = 1;
+double w_v          = 1;
+double w_delta      = 100;
+double w_a          = 1;
+double w_delta_gap  = 1e6;
+double w_a_gap      = 1;
+
 // The solver takes all the state variables and actuator
 // variables in a singular vector. Thus, we should to establish
 // when one variable starts and another ends to make our lifes easier.
@@ -55,9 +65,9 @@ class FG_eval {
     // any anything you think may be beneficial.
     for(unsigned int t=0; t<N; t++) 
     {
-      fg[0] += CppAD::pow(vars[cte_start +t] - ref_cte, 2);
-      fg[0] += CppAD::pow(vars[epsi_start +t] - ref_epsi, 2);
-      fg[0] += CppAD::pow(vars[v_start +t] - ref_v, 2);
+      fg[0] += w_cte * CppAD::pow(vars[cte_start +t] - ref_cte, 2);
+      fg[0] += w_epsi * CppAD::pow(vars[epsi_start +t] - ref_epsi, 2);
+      fg[0] += w_v * CppAD::pow(vars[v_start +t] - ref_v, 2);
     }
 
     //
@@ -67,14 +77,14 @@ class FG_eval {
     // Minimize change-rate
     for(unsigned int t=0; t<N-1; t++) 
     {
-      fg[0] += 100 * CppAD::pow(vars[delta_start + t], 2);
-      fg[0] += 1 * CppAD::pow(vars[a_start + t], 2);
+      fg[0] += w_delta * CppAD::pow(vars[delta_start + t], 2);
+      fg[0] += w_a * CppAD::pow(vars[a_start + t], 2);
     }
     // Minimize the value gap between sequential actuations
     for(unsigned int t=0; t<N-2; t++)
     {
-      fg[0] += 1e6 * CppAD::pow(vars[delta_start + t+1] - vars[delta_start+t], 2);
-      fg[0] += CppAD::pow(vars[a_start + t+1] - vars[a_start+t], 2);
+      fg[0] += w_delta_gap * CppAD::pow(vars[delta_start + t+1] - vars[delta_start+t], 2);
+      fg[0] += w_a_gap * CppAD::pow(vars[a_start + t+1] - vars[a_start+t], 2);
     }
     // Initial constraints
     // We add 1 to each of the starting indices due to cost being located at
@@ -181,8 +191,8 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   // degrees (values in radians).
   // NOTE: Feel free to change this to something else.
   for (unsigned int i = delta_start; i < a_start; i++) {
-    vars_lowerbound[i] = -0.436332;
-    vars_upperbound[i] = 0.436332;
+    vars_lowerbound[i] = -0.436332; // -25 deg in radians
+    vars_upperbound[i] = 0.436332; // 25 deg in radians
   }
 
   // Acceleration/decceleration upper and lower limits.
