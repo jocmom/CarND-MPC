@@ -91,8 +91,16 @@ int main() {
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
+          double throttle = j[1]["throttle"];
+          double steering_angle = j[1]["steering_angle"];
 
-          
+          // take latency(100ms) into account
+          double latency = 0.1;
+          px = px + v * cos(psi) * latency;
+          py = py + v * sin(psi) * latency;
+          psi = psi - v * steering_angle / Lf * latency; // negative steering!
+          v += throttle * latency;         
+
           assert(ptsx.size() == ptsy.size());
           // Transform to car coordinates 
           for (unsigned int i =0; i < ptsx.size(); i++)
@@ -111,9 +119,20 @@ int main() {
           auto coeffs = polyfit(ptsx_xform, ptsy_xform, 3);
           double cte = polyeval(coeffs, 0);
           double epsi = -atan(coeffs[1]);
+
+          // take latency (100ms) into account
+          // const double latency = 0.1;  
+          // px = v * latency;
+          // py = 0;
+          // psi = - v * steering_angle / Lf * latency ;
+          // v = v + throttle * latency;
+          // cte = cte + v * sin(epsi) * latency;
+          // epsi = epsi - v * steering_angle /Lf * latency;
           // combine state variables in state vector
           Eigen::VectorXd state(6);
+          // state << px, py, psi, v, cte, epsi;         
           state << 0, 0, 0, v, cte, epsi;
+
           // use MPC solver to get next state
           auto next_state =  mpc.Solve(state, coeffs);
 
