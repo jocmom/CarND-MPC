@@ -1,6 +1,24 @@
 # CarND-Controls-MPC
 Self-Driving Car Engineer Nanodegree Program
 
+## Overview
+In general there are multiple steps required to control a self driving car:
+* Perception System which estimates the states of the surrounding envirionment
+* Localization compares the model with a map to identify the car's position
+* Path planning to find a feasible trajectory using the map and car's position
+* The controller to follow this trajectory
+In this project we are using the Model Predictive Controller (MPC) for the last step to follow a trajectory in the Udacity simulator.
+The simulator sends the car's current state like position, orientation, speed, steering, throttle, waypoints, etc. and the controller tries to follow a trajectory by using an optimizer for a cost function.  
+
+### 1. The Model
+The MPC does not only consider the current state like the PID controller but also the future state
+
+### 2. Timestep Length and Elapsed Duration (N & dt)
+
+### 3. Polynomial Fitting and MPC Preprocessing
+
+### 4. MPC with Latency
+
 ---
 
 ## Dependencies
