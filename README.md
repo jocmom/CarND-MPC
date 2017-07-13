@@ -1,5 +1,7 @@
 # CarND-Controls-MPC
-Self-Driving Car Engineer Nanodegree Program
+Project 2.5 of Self-Driving Car Engineer Nanodegree Program
+
+---
 
 ## Overview
 In general there are multiple steps required to control a self driving car:
@@ -7,17 +9,51 @@ In general there are multiple steps required to control a self driving car:
 * Localization compares the model with a map to identify the car's position
 * Path planning to find a feasible trajectory using the map and car's position
 * The controller to follow this trajectory
+
 In this project we are using the Model Predictive Controller (MPC) for the last step to follow a trajectory in the Udacity simulator.
-The simulator sends the car's current state like position, orientation, speed, steering, throttle, waypoints, etc. and the controller tries to follow a trajectory by using an optimizer for a cost function.  
+The simulator sends the car's current state like position, orientation, speed, steering, throttle, waypoints, etc. and the controller tries to follow a trajectory by using an optimizer for a cost function and sends throttle and steering values back to the simulator.  
 
 ### 1. The Model
-The MPC does not only consider the current state like the PID controller but also the future state
+We are using a kinematic model only and ignore dynamic forces like longitudinal, lateral, drag, slipping tires, etc.
+Therefore the state of the model is described by four vectors:
+* **x**, position in x direction
+* **y**, position in y direction
+* **psi**, yaw angle
+* **v**, velocity
+
+Actuators are:
+* **delta**, steering value in range of -30° and 30°
+* **a**, throttle value
+
+The following equations describe the next state after one time step *dt*:
+
+![next_state](doc/next_state.png)
+
+Lf measures the distance between the front of the vehicle and its center of gravity. The larger the vehicle, the slower the turn rate.
+The MPC does not only consider the current state like the PID controller but also the future states
 
 ### 2. Timestep Length and Elapsed Duration (N & dt)
+The prediction horizon *T* is the duration over which future predictions are made. It is the product of the variables *N* and *dt*. Where *dt* is time intervall between two time steps and *N* is the number of timesteps of the prediction. I'm using *N*=20 and *dt*=0.05s which gives a very smooth result. I started with *N*=10 and *dt*=0.1 which was ok for a smaller velocity but by increasing the velocity I needed more steps for a better horizon. Of course this also depends on the error weights. I used trial and error for finding these parameters but these are probably far away from the best spot and the twiddle algorithm from the previous project might be an good option to optimize these paramters.
 
-### 3. Polynomial Fitting and MPC Preprocessing
+### 3. Error, Cost, Solver
+The core of the controller is the cost function and tweaking it's parts by using different weight. The different costs can be found in `mpc.cpp: lines 66-88` and here we are using these 
 
-### 4. MPC with Latency
+* CTE
+* Orientation error
+* Velocity error
+* Steering and Throttle change rate
+* Gap between sequential actuations
+
+These costs are multiplied with different weights and optimzing these and the horizon is the key to a good solution. Of course I weighted the CTE and Orientation error very high to stay near the desired trajectory but also the gap between sequential steering values is essential to have a smooth controller.
+Minimizing the cost is handled by the solver of the Ipopt library. 
+
+### 4. Polynomial Fitting and MPC Preprocessing
+The simulator sends the car's next waypoints to controllers listening on port 4567, in our case the MPC controller. Theses waypoints are map coordinates and for further calculation it's easier to transform them into car coordinates.
+This transformation is done in `main.cpp: lines 106-116` and shifts the origin to the car's position and rotates the X-axis to the orientation of the car.
+A 3rd order polynom is fitted to these points and represents the desired trajectory as goal for the optimizer.
+
+### 5. MPC with Latency
+It's realistic to have some delay between the actions of throttle and steering take effect. There is fixed 100ms latency implemented into the simulator to take this into account. To deal with this latency the received state values from the simulator are replaced with predicted values calculated by using latency=0.1 `main.cpp: lines 98-102`. These values are then used in all equations.
 
 ---
 
